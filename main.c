@@ -146,6 +146,75 @@ static void set_message(const char *message)
     g_strlcpy(app.message, message, sizeof(app.message));
 }
 
+static void draw_centered_text(cairo_t *cr, const char *text, double cx, double cy, double size)
+{
+    cairo_text_extents_t extents;
+
+    cairo_select_font_face(cr, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size(cr, size);
+    cairo_text_extents(cr, text, &extents);
+    cairo_move_to(cr, cx - extents.width / 2.0 - extents.x_bearing,
+                  cy - extents.height / 2.0 - extents.y_bearing);
+    cairo_show_text(cr, text);
+    cairo_new_path(cr);
+}
+
+static void draw_piece(cairo_t *cr, GnectPiece piece, double cx, double cy, double radius)
+{
+    double x;
+
+    cairo_save(cr);
+    cairo_new_path(cr);
+    cairo_arc(cr, cx + radius * 0.08, cy + radius * 0.10, radius, 0, 2 * G_PI);
+    cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.22);
+    cairo_fill(cr);
+
+    cairo_new_path(cr);
+    cairo_arc(cr, cx, cy, radius, 0, 2 * G_PI);
+    if (piece == GNECT_RED)
+        cairo_set_source_rgb(cr, 0.04, 0.04, 0.04);
+    else
+        cairo_set_source_rgb(cr, 0.96, 0.96, 0.90);
+    cairo_fill_preserve(cr);
+
+    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+    cairo_set_line_width(cr, MAX(3.0, radius * 0.10));
+    cairo_stroke(cr);
+
+    if (piece == GNECT_YELLOW) {
+        cairo_new_path(cr);
+        cairo_arc(cr, cx, cy, radius * 0.82, 0, 2 * G_PI);
+        cairo_clip(cr);
+        cairo_new_path(cr);
+        cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+        cairo_set_line_width(cr, MAX(1.4, radius * 0.045));
+        for (x = cx - radius * 1.2; x < cx + radius * 1.2; x += radius * 0.26) {
+            cairo_move_to(cr, x, cy + radius);
+            cairo_line_to(cr, x + radius, cy - radius);
+        }
+        cairo_stroke(cr);
+    }
+
+    cairo_restore(cr);
+
+    cairo_new_path(cr);
+    cairo_arc(cr, cx, cy, radius * 0.48, 0, 2 * G_PI);
+    cairo_set_source_rgb(cr,
+                         piece == GNECT_RED ? 1.0 : 0.96,
+                         piece == GNECT_RED ? 1.0 : 0.96,
+                         piece == GNECT_RED ? 1.0 : 0.92);
+    cairo_fill_preserve(cr);
+    cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+    cairo_set_line_width(cr, MAX(1.6, radius * 0.045));
+    cairo_stroke(cr);
+
+    cairo_set_source_rgb(cr,
+                         0.0,
+                         0.0,
+                         0.0);
+    draw_centered_text(cr, piece == GNECT_RED ? "R" : "Y", cx, cy, radius * 0.95);
+}
+
 static gboolean board_expose(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
     cairo_t *cr = gdk_cairo_create(widget->window);
@@ -190,21 +259,7 @@ static gboolean board_expose(GtkWidget *widget, GdkEventExpose *event, gpointer 
             cairo_stroke(cr);
 
             if (piece != GNECT_EMPTY) {
-                cairo_pattern_t *pat = cairo_pattern_create_radial(cx - cell * 0.12, cy - cell * 0.12,
-                                                                    cell * 0.05, cx, cy, cell * 0.36);
-                if (piece == GNECT_RED) {
-                    cairo_pattern_add_color_stop_rgb(pat, 0, 0.98, 0.76, 0.66);
-                    cairo_pattern_add_color_stop_rgb(pat, 1, 0.56, 0.08, 0.05);
-                } else {
-                    cairo_pattern_add_color_stop_rgb(pat, 0, 1.0, 0.96, 0.68);
-                    cairo_pattern_add_color_stop_rgb(pat, 1, 0.66, 0.51, 0.08);
-                }
-                cairo_arc(cr, cx, cy, cell * 0.34, 0, 2 * G_PI);
-                cairo_set_source(cr, pat);
-                cairo_fill_preserve(cr);
-                cairo_pattern_destroy(pat);
-                cairo_set_source_rgb(cr, 0.05, 0.05, 0.05);
-                cairo_stroke(cr);
+                draw_piece(cr, piece, cx, cy, cell * 0.34);
             }
         }
     }

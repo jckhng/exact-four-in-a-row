@@ -23,6 +23,8 @@ GnomeGames4Kindle and its author(s).
 - Easy/medium/hard AI levels.
 - Legal move hints, score display, move history review controls, undo, save,
   and load.
+- E-ink-friendly disc rendering: Red and Yellow are distinguished by contrast,
+  labels, and patterns rather than color alone.
 - KUAL extension package with bundled ARM runtime libraries.
 
 ## Install
